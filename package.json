@@ -1,0 +1,44 @@
+{
+  "name": "bylight",
+  "version": "1.0.0",
+  "description": "Flexible Syntax Highlighting for Documentation",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./styles": "./styles/bylight.css"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mhuebert/bylight"
+  },
+  "keywords": [
+    "syntax",
+    "highlighting",
+    "documentation"
+  ],
+  "author": "Matt Huebert",
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  },
+  "dependencies": {
+    "jsdom": "^25.0.0"
+  },
+  "type": "module"
+}
