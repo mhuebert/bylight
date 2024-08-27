@@ -1,4 +1,3 @@
-
 // src/bylight.ts
 interface BylightOptions {
   target?: string | HTMLElement;
@@ -17,16 +16,16 @@ function escapeRegExp(string: string): string {
 }
 
 const DefaultColors: string[] = [
-  "#4e79a7",
-  "#f28e2c",
-  "#e15759",
-  "#76b7b2",
   "#59a14f",
+  "#b82efe",
+  "#007bfe",
+  "#6a6a6a",
+  "#ff4245",
+  "#7c2d00",
+  "#76b7b2",
   "#d4af37",
-  "#af7aa1",
   "#ff9da7",
-  "#9c755f",
-  "#9a908b",
+  "#f28e2c",
 ];
 
 let debug = false;
@@ -162,19 +161,25 @@ function highlightPatterns(
   colorScheme: string[] = DefaultColors
 ): void {
   const text = preElement.textContent || "";
-  const {
-    matchId = `match-${Math.random().toString(36).slice(2, 11)}`,
-    colorIndex = 0,
-  } = options;
-  const matches = findMatchesForPatterns(text, patterns, matchId);
-  if (matches.length === 0) return;
+  const { matchId = `match-${Math.random().toString(36).slice(2, 11)}` } = options;
+  
+  let allMatches: [number, number, string, string][] = [];
+  
+  patterns.forEach((patternGroup, index) => {
+    const subPatterns = patternGroup.split(',').map(p => p.trim());
+    const color = colorScheme[index % colorScheme.length];
+    const styleString = `--bylight-color: ${color};`;
+    
+    const groupMatches = findMatchesForPatterns(text, subPatterns, `${matchId}-${index}`);
+    const formattedMatches = groupMatches.map(
+      match => [...match, styleString] as [number, number, string, string]
+    );
+    
+    allMatches = allMatches.concat(formattedMatches);
+  });
 
-  const color = colorScheme[colorIndex % colorScheme.length];
-  const styleString = `--bylight-color: ${color};`;
+  if (allMatches.length === 0) return;
 
-  const allMatches = matches.map(
-    (match) => [...match, styleString] as [number, number, string, string],
-  );
   preElement.innerHTML = `<code>${applyHighlights(text, allMatches)}</code>`;
 }
 
@@ -326,7 +331,6 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
     }
   });
 
-  log(preMap);
 
   // Process links
   linkMap.forEach((linkData, linkElement) => {
@@ -335,7 +339,7 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
     
     // Create a new span element
     const spanElement = document.createElement('span');
-    spanElement.textContent = linkElement.textContent;
+    spanElement.innerHTML = linkElement.innerHTML;
     spanElement.dataset.matchId = matchId;
     spanElement.classList.add("bylight-link");
     spanElement.style.setProperty("--bylight-color", color);
@@ -396,16 +400,46 @@ function bylight(options: BylightOptions = {}): void {
   addHoverEffect(targetElement);
 }
 
+// Attach utility functions to the main bylight function
+bylight.highlightPatterns = highlightPatterns;
+bylight.processLinksAndHighlight = processLinksAndHighlight;
+bylight.addHoverEffect = addHoverEffect;
+bylight.findMatches = findMatches;
+bylight.findRegexMatches = findRegexMatches;
+bylight.escapeRegExp = escapeRegExp;
+bylight.DefaultColors = DefaultColors;
+
+// Export the main function as default and as a named export
+export { bylight as default, bylight };
+
+// Keep named exports for ESM users
 export {
-  bylight,
+  BylightOptions,
+  HighlightOptions,
   highlightPatterns,
   processLinksAndHighlight,
   addHoverEffect,
   findMatches,
   findRegexMatches,
-  // Additional exports
-  BylightOptions,
-  HighlightOptions,
   escapeRegExp,
   DefaultColors,
+};
+
+// Add this new function
+function highlight(selector: string, patterns: string | string[], options: HighlightOptions = {}, colorScheme: string[] = DefaultColors): void {
+  const preElements = document.querySelectorAll<HTMLPreElement>(selector);
+  const patternsArray = Array.isArray(patterns) ? patterns : [patterns];
+
+  preElements.forEach(preElement => {
+    highlightPatterns(preElement, patternsArray, options, colorScheme);
+  });
+}
+
+// Add the new function to the utility functions attached to bylight
+bylight.highlight = highlight;
+
+// Add the new function to the named exports
+export {
+  // ... existing exports ...
+  highlight,
 };

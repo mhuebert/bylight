@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { findMatches, highlightPatterns, processLinksAndHighlight, addHoverEffect, bylight, findRegexMatches, DefaultColors, BylightOptions } from '../src/index'
+import bylight, { findMatches, highlightPatterns, processLinksAndHighlight, addHoverEffect, findRegexMatches, DefaultColors, BylightOptions } from '../src/index'
 
 describe('findMatches', () => {
   const testCases = [

@@ -1,10 +1,10 @@
 .bylight-link {
     color: inherit;
-    background-color: color-mix(in srgb, var(--bylight-color) 20%, transparent);
+    background-color: color-mix(in srgb, var(--bylight-color) 25%, transparent);
     padding: 0 3px;
 
     &.bylight-hover {
-        background-color: color-mix(in srgb, var(--bylight-color) 35%, transparent);
+        background-color: color-mix(in srgb, var(--bylight-color) 40%, transparent);
         color: inherit;
     }
 }

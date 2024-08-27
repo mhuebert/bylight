@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bylight Documentation</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      pre {
+        background-color: #f4f4f4;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+      }
+      p code,
+      ul code,
+      ol code {
+        background-color: #eee;
+        padding: 0 3px;
+      }
+    </style>
+    <script src="dist/index.global.js"></script>
+    <link rel="stylesheet" href="styles/bylight.css" />
+  </head>
+  <body>
+    <h1>Bylight Example</h1>
+
+    <h2>Basic Usage</h2>
+    <p>
+      Bylight allows you highlight code using special links in nearby text.
+      Here's how it works:
+    </p>
+    <ol>
+      <li>Create a link with the <code>bylight:</code> protocol.</li>
+      <li>
+        Specify what to highlight using either:
+        <ul>
+          <li>The link text itself, or</li>
+          <li>The <code>match</code> parameter in the URL.</li>
+        </ul>
+      </li>
+      <li>
+        Optionally, use the <code>in</code> parameter to target specific
+        <code>pre</code> elements.
+      </li>
+    </ol>
+    <p>Let's see it in action with a simple rhyme:</p>
+    <pre>
+Roses are red, violets are blue,
+Bylight makes highlighting easy for you!
+    </pre>
+    <ul>
+      <li>
+        Highlight <a href="bylight:Roses?in=-1">Roses</a> (using link text)
+      </li>
+      <li>
+        Highlight <a href="bylight:?match=violets&in=-1">violets</a> (using
+        <code>match=violets</code> parameter)
+      </li>
+      <li>
+        Highlight
+        <a href="bylight:?match=blue,you&in=-1">rhyming words</a> (multiple
+        patterns, <code>match=blue,you</code> )
+      </li>
+      <li>
+        Highlight
+        <a href="bylight:?match=Bylight...highlighting&in=-1">a phrase</a>
+        (using wildcards, <code>match=Bylight...highlighting</code>)
+      </li>
+    </ul>
+    <p>
+      In these examples, we use the <code>in</code> parameter to specify which
+      <code>pre</code> element to target. The value <code>in=-1</code> tells
+      Bylight to look in the nearest preceding <code>pre</code> element relative
+      to the link. Positive values target elements after the link, while
+      negative values target elements before it.
+    </p>
+
+    <h2>Multiple Patterns</h2>
+    <p>
+      The <code>match</code> param accepts multiple patterns, seperated by
+      commas. See the <a href="bylight:?match=fries,disguise">rhyme</a> and
+      <a href="bylight:?match=Pickles,pizza">alliteration</a> below, achieved
+      via <code>match=fries,disguise</code> and
+      <code>match=Pickles,pizza</code> respectively.
+    </p>
+    <pre>
+Pickles on pizza, ice cream on fries,
+Else clauses on Tuesdays, if blocks in disguise!
+    </pre>
+
+    <h2>Regex Pattern</h2>
+    <p>
+      Here's an example using the regex pattern
+      <code>match=/const\s\w%2B/</code> to match
+      <a href="bylight:?match=/const\s\w%2B/">const declarations.</a> Note that
+      one must URL-encode the regex, so <code>+</code> is written
+      <code>%2B</code>.
+    </p>
+    <pre>
+const PI = 3.14159;
+const MAX_SIZE = 100;
+let variable = "This won't be highlighted";
+const COLORS = ['red', 'green', 'blue'];
+    </pre>
+
+    <h2>Color Scheme</h2>
+
+    The default color scheme includes 10 colors, which cycle:
+
+    <p>
+      <a href="bylight:">Aa aA</a> <code>#59a14f</code>,
+      <a href="bylight:">Bb bB</a> <code>#b82efe</code>,
+      <a href="bylight:">Cc cC</a> <code>#007bfe</code>,
+      <a href="bylight:">Dd dD</a> <code>#f28e2c</code>,
+      <a href="bylight:">Ee eE</a> <code>#ff4245</code>,
+      <a href="bylight:">Ff fF</a> <code>#7c2d00</code>,
+      <a href="bylight:">Gg gG</a> <code>#76b7b2</code>,
+      <a href="bylight:">Hh hH</a> <code>#d4af37</code>,
+      <a href="bylight:">Ii iI</a> <code>#ff9da7</code>,
+      <a href="bylight:">Jj jJ</a> <code>#6a6a6a</code>
+    </p>
+
+    <pre>Aa aA Bb bB Cc cC Dd dD Ee eE Ff fF Gg gG Hh hH Ii iI Jj jJ</pre>
+
+    <p>One can override the color scheme by passing a list of color strings as a <code>colorScheme</code> option.</p>
+
+    <h2>Directional Highlighting</h2>
+
+    <p>
+      Use the <code>in</code> and <code>dir</code> query parameters to specify
+      which <code>pre</code> elements to match, <em>relative to the link</em>.
+    </p>
+    <p>
+      By default, a link will target the next `pre` below it on the page. This
+      is the same as specifying <code>in=1</code>.
+    </p>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <p>Examples:</p>
+    <ul>
+      <li>
+        <a href="bylight:?match=A&in=-3">match=<b>A</b>&in=<b>-3</b></a>
+      </li>
+      <li>
+        <a href="bylight:?match=B&in=-2">match=<b>B</b>&in=<b>-2</b></a>
+      </li>
+      <li>
+        <a href="bylight:?match=C&in=-1">match=<b>C</b>&in=<b>-1</b></a>
+      </li>
+    </ul>
+    <p>
+      The <code>in</code> parameter can also be positive to target
+      <code>pre</code> elements below the link:
+    </p>
+    <ul>
+      <li>
+        <a href="bylight:?match=D&in=1">match=<b>D</b>&in=<b>1</b></a>
+      </li>
+      <li>
+        <a href="bylight:?match=D&in=2">match=<b>D</b>&in=<b>2</b></a>
+      </li>
+      <li>
+        <a href="bylight:?match=D&in=3">match=<b>D</b>&in=<b>3</b></a>
+      </li>
+    </ul>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <p>
+      Use the <code>dir</code> parameter to select all matches down from a link:
+    </p>
+    <ul>
+      <li>
+        <a href="bylight:?match=E&dir=down">match=<b>E</b>&dir=<b>down</b></a>
+      </li>
+    </ul>
+    <pre>A B C D E 1 2 3 4 5</pre>
+    <pre>A B C D E 1 2 3 4 5</pre>
+
+    <h2>Programmatic Highlighting</h2>
+    We can also highlight patterns programmatically using the <a href="bylight:?match=bylight.highlight">highlight function</a>, which takes a <a href="bylight:?match=%22%23example-1%22">selector</a> (or `pre` element) and <a href="bylight:?match=[...]">list of patterns</a>:
+
+    <pre>
+bylight.highlight("#example-1", [
+  "Dots,dashes",
+  "swirls,lines",
+  "Stripes,zebras",
+  "spots,cats"
+]);</pre>
+<pre id="example-1">
+    Dots and dashes, swirls and lines,
+    Playful shapes in fun designs.
+    Stripes on zebras, spots on cats,
+    Ripples in streams, and that is that!
+</pre>
+    <script>
+        bylight.highlight("#example-1", [
+          "Dots,dashes",
+          "swirls,lines",
+          "Stripes,zebras",
+          "spots,cats"
+        ]);
+
+        bylight()
+      </script>
+
+    <h2>Installation and Usage</h2>
+
+    <p>Install Bylight using npm:</p>
+
+    <pre>npm install bylight</pre>
+
+    <p>Bylight supports multiple import methods:</p>
+
+    <h3>1. ES Modules</h3>
+    <pre>
+    import bylight from 'bylight';
+    import 'bylight/styles';
+
+    bylight();
+    </pre>
+
+    <h3>2. CommonJS</h3>
+    <pre>
+    const bylight = require('bylight');
+    require('bylight/styles');
+
+    bylight();
+    </pre>
+
+    <h3>3. Browser (IIFE)</h3>
+    <p>Include the script and CSS in your HTML:</p>
+    <pre>
+    &lt;script src="https://unpkg.com/bylight/dist/index.global.js"&gt;&lt;/script&gt;
+    &lt;link rel="stylesheet" href="https://unpkg.com/bylight/styles/bylight.css"&gt;
+
+    &lt;script&gt;
+      bylight();
+    &lt;/script&gt;
+    </pre>
+
+  </body>
+</html>
