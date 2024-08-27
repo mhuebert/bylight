@@ -1,53 +1,14 @@
 # Bylight
 
-Bylight allows you to highlight code using special links in nearby text, making technical concepts more tangible when explaining code.
+Bylight allows you to highlight code using special links in nearby text, making technical concepts more tangible when explaining code. See the [documentation and examples](https://mhuebert.github.io/bylight/).
 
-## Basic Usage
+![Example of Bylight in action](example.png)
 
-To use Bylight in your project, follow these steps:
+## Features
 
-1. Install the package:
-
-   ```bash
-   npm install bylight
-   ```
-
-2. Import Bylight and its styles:
-
-   ```javascript
-   import bylight from 'bylight';
-   import 'bylight/styles';
-   ```
-
-3. Initialize Bylight:
-
-   ```javascript
-   bylight();
-   ```
-
-4. Add Bylight links to your HTML. There are two main ways to specify what to highlight:
-
-   a. Use the link text as the pattern:
-
-   ```html
-   <a href="bylight:function">Highlight functions</a>
-   <pre>
-     function example(a, b) {
-       return a + b;
-     }
-   </pre>
-   ```
-
-   b. Use the `match` parameter in the URL:
-
-   ```html
-   <a href="bylight:?match=function">Highlight functions</a>
-   <pre>
-     function example(a, b) {
-       return a + b;
-     }
-   </pre>
-   ```
-
-Bylight will process the links and highlight the corresponding patterns in nearby `<pre>` elements.
-
+- Highlight code snippets using special `bylight:` links
+- Support for multiple highlighting patterns
+- Regex pattern matching
+- Directional highlighting (target specific code blocks)
+- Customizable color scheme
+- Easy integration with various JavaScript environments
