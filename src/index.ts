@@ -1,7 +1,6 @@
 // src/bylight.ts
 interface BylightOptions {
   target?: string | HTMLElement;
-  debugMode?: boolean;
   colorScheme?: string[];
 }
 
@@ -28,10 +27,6 @@ const DefaultColors: string[] = [
   "#f28e2c",
 ];
 
-let debug = false;
-const log = (...args: any[]): void => { debug && console.log(...args); };
-
-// Wildcard matching functions
 function matchWildcard(
   text: string,
   startIndex: number,
@@ -71,23 +66,19 @@ function matchWildcard(
   return index;
 }
 
-// Matching functions
 function findMatches(text: string, pattern: string): [number, number][] {
-  const isRegex = pattern.startsWith("/") && pattern.endsWith("/");
-  if (isRegex) {
+  if (pattern.startsWith("/") && pattern.endsWith("/")) {
     return findRegexMatches(text, pattern.slice(1, -1));
   }
 
-  let matches: [number, number][] = [];
+  const matches: [number, number][] = [];
   let currentPosition = 0;
 
   while (currentPosition < text.length) {
     const match = findSingleMatch(text, pattern, currentPosition);
-
     if (match) {
-      const [matchStart, matchEnd] = match;
-      matches.push([matchStart, matchEnd]);
-      currentPosition = matchEnd;
+      matches.push(match);
+      currentPosition = match[1];
     } else {
       currentPosition++;
     }
@@ -115,30 +106,21 @@ function findSingleMatch(
 ): [number, number] | null {
   let patternPosition = 0;
   let textPosition = startPosition;
-  let matchStart = startPosition;
 
   while (textPosition < text.length && patternPosition < pattern.length) {
-    if (pattern.substr(patternPosition, 3) === "...") {
-      // Handle wildcard
+    if (pattern.startsWith("...", patternPosition)) {
       const nextCharacter = pattern[patternPosition + 3] || "";
       textPosition = matchWildcard(text, textPosition, nextCharacter);
       patternPosition += 3;
     } else if (text[textPosition] === pattern[patternPosition]) {
-      // Characters match, move to next
       textPosition++;
       patternPosition++;
     } else {
-      // No match found
       return null;
     }
   }
 
-  // Check if we've matched the entire pattern
-  if (patternPosition === pattern.length) {
-    return [matchStart, textPosition];
-  }
-
-  return null;
+  return patternPosition === pattern.length ? [startPosition, textPosition] : null;
 }
 
 // Highlighting functions
@@ -154,6 +136,10 @@ function findMatchesForPatterns(
   );
 }
 
+function generateUniqueId(): string {
+  return `match-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 function highlightPatterns(
   preElement: HTMLPreElement,
   patterns: string[],
@@ -161,26 +147,18 @@ function highlightPatterns(
   colorScheme: string[] = DefaultColors
 ): void {
   const text = preElement.textContent || "";
-  const { matchId = `match-${Math.random().toString(36).slice(2, 11)}` } = options;
+  const { matchId = generateUniqueId() } = options;
   
-  let allMatches: [number, number, string, string][] = [];
-  
-  patterns.forEach((patternGroup, index) => {
+  const allMatches = patterns.flatMap((patternGroup, index) => {
     const subPatterns = patternGroup.split(',').map(p => p.trim());
     const color = colorScheme[index % colorScheme.length];
-    const styleString = `--bylight-color: ${color};`;
-    
-    const groupMatches = findMatchesForPatterns(text, subPatterns, `${matchId}-${index}`);
-    const formattedMatches = groupMatches.map(
-      match => [...match, styleString] as [number, number, string, string]
-    );
-    
-    allMatches = allMatches.concat(formattedMatches);
+    return findMatchesForPatterns(text, subPatterns, `${matchId}-${index}`)
+      .map(match => [...match, `--bylight-color: ${color};`] as [number, number, string, string]);
   });
 
-  if (allMatches.length === 0) return;
-
-  preElement.innerHTML = `<code>${applyHighlights(text, allMatches)}</code>`;
+  if (allMatches.length > 0) {
+    preElement.innerHTML = `<code>${applyHighlights(text, allMatches)}</code>`;
+  }
 }
 
 function applyHighlights(
@@ -206,22 +184,14 @@ function applyHighlights(
 }
 
 // Link processing and hover effect functions
+// Simplify the processLinksAndHighlight function
 function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: string[] = DefaultColors): void {
   const elements = targetElement.querySelectorAll<
     HTMLPreElement | HTMLAnchorElement
   >('pre, a[href^="bylight"]');
 
   const preMap = new Map<HTMLPreElement, [number, number, string][]>();
-  const linkMap = new Map<
-    HTMLAnchorElement,
-    {
-      targetIndices: number[] | "all" | "up" | "down";
-      patterns: string[];
-      index: number;
-      matchId: string;
-      color?: string; // Add color property
-    }
-  >();
+  const linkMap = new Map<HTMLAnchorElement, LinkData>();
   const colorMap = new Map<string, number>();
   let colorIndex = 0;
 
@@ -231,36 +201,10 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
       preMap.set(element as HTMLPreElement, []);
     } else if (element.tagName === "A") {
       const anchorElement = element as HTMLAnchorElement;
-      const url = new URL(anchorElement.href);
-      const matchId = `match-${index}-${Math.random().toString(36).slice(2, 11)}`;
-      const inParam = url.searchParams.get("in");
-      const dirParam = url.searchParams.get("dir");
-      const color = url.searchParams.get("color"); // Get color from URL params
-
-      let targetIndices: number[] | "all" | "up" | "down";
-      if (inParam) {
-        targetIndices =
-          inParam === "all" ? "all" : inParam.split(",").map(Number);
-      } else if (dirParam) {
-        targetIndices = dirParam as "up" | "down";
-      } else {
-        targetIndices = [1]; // Default behavior
-      }
-
-      linkMap.set(anchorElement, {
-        targetIndices,
-        patterns: (
-          url.searchParams.get("match") ||
-          anchorElement.textContent ||
-          ""
-        ).split(","),
-        index,
-        matchId,
-        color: color ?? undefined, // Use nullish coalescing operator
-      });
-      colorMap.set(matchId, colorIndex);
+      const linkData = processAnchorElement(anchorElement, index, colorScheme, colorIndex);
+      linkMap.set(anchorElement, linkData);
+      colorMap.set(linkData.matchId, colorIndex);
       colorIndex = (colorIndex + 1) % colorScheme.length;
-      anchorElement.addEventListener("click", (e) => e.preventDefault());
     }
   });
 
@@ -269,45 +213,20 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
     ({ targetIndices, patterns, index, matchId, color }, linkElement) => {
       const findMatchingPres = (
         indices: number[] | "all" | "up" | "down",
+        index: number
       ): HTMLPreElement[] => {
         if (indices === "all") {
           return Array.from(preMap.keys());
         }
         if (indices === "up" || indices === "down") {
-          const direction = indices === "up" ? -1 : 1;
-          const matchingPres: HTMLPreElement[] = [];
-          let preCount = 0;
-          for (let i = index + direction; i >= 0 && i < elements.length; i += direction) {
-            if (elements[i].tagName === "PRE") {
-              matchingPres.push(elements[i] as HTMLPreElement);
-              preCount++;
-              if (preCount === Math.abs(parseInt(indices))) break;
-            }
-          }
-          return matchingPres;
+          return findPreElementsInDirection(elements, index, indices, parseInt(indices));
         }
         return indices
-          .map((offset) => {
-            let preCount = 0;
-            const targetIndex = index + (offset > 0 ? 1 : -1);
-            for (
-              let i = targetIndex;
-              i >= 0 && i < elements.length;
-              i += Math.sign(offset)
-            ) {
-              if (elements[i].tagName === "PRE") {
-                preCount++;
-                if (preCount === Math.abs(offset)) {
-                  return elements[i] as HTMLPreElement;
-                }
-              }
-            }
-            return null;
-          })
+          .map(offset => findPreElementByOffset(elements, index, offset))
           .filter((el): el is HTMLPreElement => el !== null);
       };
 
-      const matchingPres = findMatchingPres(targetIndices);
+      const matchingPres = findMatchingPres(targetIndices, index);
 
       matchingPres.forEach((matchingPre) => {
         const text = matchingPre.textContent || "";
@@ -354,6 +273,86 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
   });
 }
 
+// Add a helper function to process anchor elements
+function processAnchorElement(anchorElement: HTMLAnchorElement, index: number, colorScheme: string[], colorIndex: number): LinkData {
+  const url = new URL(anchorElement.href);
+  const matchId = generateUniqueId();
+  const inParam = url.searchParams.get("in");
+  const dirParam = url.searchParams.get("dir");
+  const color = url.searchParams.get("color") || colorScheme[colorIndex];
+
+  const targetIndices = getTargetIndices(inParam, dirParam);
+
+  anchorElement.addEventListener("click", (e) => e.preventDefault());
+
+  return {
+    targetIndices,
+    patterns: (url.searchParams.get("match") || anchorElement.textContent || "").split(","),
+    index,
+    matchId,
+    color,
+  };
+}
+
+function getTargetIndices(inParam: string | null, dirParam: string | null): number[] | "all" | "up" | "down" {
+  if (inParam) {
+    return inParam === "all" ? "all" : inParam.split(",").map(Number);
+  } else if (dirParam) {
+    return dirParam as "up" | "down";
+  }
+  return [1]; // Default behavior
+}
+
+interface LinkData {
+  targetIndices: number[] | "all" | "up" | "down";
+  patterns: string[];
+  index: number;
+  matchId: string;
+  color: string;
+}
+
+// Add these helper functions
+function findPreElementsInDirection(
+  elements: NodeListOf<HTMLPreElement | HTMLAnchorElement>,
+  startIndex: number,
+  direction: "up" | "down",
+  count: number
+): HTMLPreElement[] {
+  const dir = direction === "up" ? -1 : 1;
+  const matchingPres: HTMLPreElement[] = [];
+  let preCount = 0;
+  
+  for (let i = startIndex + dir; i >= 0 && i < elements.length; i += dir) {
+    if (elements[i].tagName === "PRE") {
+      matchingPres.push(elements[i] as HTMLPreElement);
+      preCount++;
+      if (preCount === count) break;
+    }
+  }
+  
+  return matchingPres;
+}
+
+function findPreElementByOffset(
+  elements: NodeListOf<HTMLPreElement | HTMLAnchorElement>,
+  startIndex: number,
+  offset: number
+): HTMLPreElement | null {
+  let preCount = 0;
+  const dir = Math.sign(offset);
+  
+  for (let i = startIndex + dir; i >= 0 && i < elements.length; i += dir) {
+    if (elements[i].tagName === "PRE") {
+      preCount++;
+      if (preCount === Math.abs(offset)) {
+        return elements[i] as HTMLPreElement;
+      }
+    }
+  }
+  
+  return null;
+}
+
 function addHoverEffect(targetElement: HTMLElement): void {
   targetElement.addEventListener("mouseover", (event) => {
     const target = event.target as HTMLElement;
@@ -388,8 +387,7 @@ function addHoverEffect(targetElement: HTMLElement): void {
  * @param options Configuration options for bylight
  */
 function bylight(options: BylightOptions = {}): void {
-  const { target = "body", debugMode = false, colorScheme = DefaultColors } = options;
-  debug = debugMode;
+  const { target = "body", colorScheme = DefaultColors } = options;
 
   const targetElement =
     typeof target === "string"
