@@ -444,3 +444,50 @@ describe('bylight with custom color scheme', () => {
     expect(getColor(spanLinkElements[2])).toBe(customColors[0]);
   });
 });
+
+describe('bylight with custom color scheme and link color override', () => {
+  let testElement: HTMLElement;
+
+  const setupTestEnvironment = (html: string, bylightOptions: BylightOptions = {}) => {
+    testElement = document.createElement('div');
+    testElement.innerHTML = html;
+    document.body.appendChild(testElement);
+    bylight({ ...bylightOptions, target: testElement });
+
+    return {
+      targetElement: testElement,
+      preElement: testElement.querySelector('pre') as HTMLPreElement,
+      spanLinkElements: testElement.querySelectorAll("span.bylight-link") as NodeListOf<HTMLSpanElement>,
+      codeSpans: testElement.querySelectorAll("span.bylight-code") as NodeListOf<HTMLSpanElement>
+    };
+  };
+
+  const getColor = (element: HTMLElement) => 
+    element.style.getPropertyValue('--bylight-color');
+
+  afterEach(() => {
+    if (testElement && testElement.parentNode) {
+      testElement.parentNode.removeChild(testElement);
+    }
+  });
+
+  it('should override link color when color parameter is provided', () => {
+    const html = `
+      <a href="bylight:?match=func(...)">Link 1</a>
+      <a href="bylight:?match=other(...)&color=blue">Link 2</a>
+      <a href="bylight:?match=another(...)">Link 3</a>
+      <pre>func(a, b) other(x, y) another(z)</pre>
+    `;
+    const customColors = ['red', 'green', 'yellow'];
+    const { spanLinkElements, codeSpans } = setupTestEnvironment(html, { colorScheme: customColors });
+    
+    expect(getColor(spanLinkElements[0])).toBe(customColors[0]);
+    expect(getColor(spanLinkElements[1])).toBe('blue'); // Overridden color
+    expect(getColor(spanLinkElements[2])).toBe(customColors[2]);
+
+    // Check that the highlighted code spans use the correct colors
+    expect(getColor(codeSpans[0])).toBe(customColors[0]);
+    expect(getColor(codeSpans[1])).toBe('blue'); // Overridden color
+    expect(getColor(codeSpans[2])).toBe(customColors[2]);
+  });
+});

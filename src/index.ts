@@ -2,7 +2,7 @@
 interface BylightOptions {
   target?: string | HTMLElement;
   debugMode?: boolean;
-  colorScheme?: string[]; // Add colorScheme option
+  colorScheme?: string[];
 }
 
 interface HighlightOptions {
@@ -219,6 +219,7 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
       patterns: string[];
       index: number;
       matchId: string;
+      color?: string; // Add color property
     }
   >();
   const colorMap = new Map<string, number>();
@@ -234,6 +235,7 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
       const matchId = `match-${index}-${Math.random().toString(36).slice(2, 11)}`;
       const inParam = url.searchParams.get("in");
       const dirParam = url.searchParams.get("dir");
+      const color = url.searchParams.get("color"); // Get color from URL params
 
       let targetIndices: number[] | "all" | "up" | "down";
       if (inParam) {
@@ -254,6 +256,7 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
         ).split(","),
         index,
         matchId,
+        color: color ?? undefined, // Use nullish coalescing operator
       });
       colorMap.set(matchId, colorIndex);
       colorIndex = (colorIndex + 1) % colorScheme.length;
@@ -263,7 +266,7 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
 
   // Second pass: Process links and find matches in pre elements
   linkMap.forEach(
-    ({ targetIndices, patterns, index, matchId }, linkElement) => {
+    ({ targetIndices, patterns, index, matchId, color }, linkElement) => {
       const findMatchingPres = (
         indices: number[] | "all" | "up" | "down",
       ): HTMLPreElement[] => {
@@ -319,30 +322,32 @@ function processLinksAndHighlight(targetElement: HTMLElement, colorScheme: strin
     if (matches.length > 0) {
       const text = preElement.textContent || "";
       const allMatches = matches.map(
-        ([start, end, matchId]) =>
-          [
+        ([start, end, matchId]) => {
+          const linkData = Array.from(linkMap.values()).find(data => data.matchId === matchId);
+          const color = linkData?.color || colorScheme[colorMap.get(matchId) || 0];
+          return [
             start,
             end,
             matchId,
-            `--bylight-color: ${colorScheme[colorMap.get(matchId) || 0]};`,
-          ] as [number, number, string, string],
+            `--bylight-color: ${color};`,
+          ] as [number, number, string, string];
+        }
       );
       preElement.innerHTML = `<code>${applyHighlights(text, allMatches)}</code>`;
     }
   });
 
-
   // Process links
   linkMap.forEach((linkData, linkElement) => {
-    const { matchId } = linkData;
-    const color = colorScheme[colorMap.get(matchId) || 0];
+    const { matchId, color } = linkData;
+    const finalColor = color || colorScheme[colorMap.get(matchId) || 0];
     
     // Create a new span element
     const spanElement = document.createElement('span');
     spanElement.innerHTML = linkElement.innerHTML;
     spanElement.dataset.matchId = matchId;
     spanElement.classList.add("bylight-link");
-    spanElement.style.setProperty("--bylight-color", color);
+    spanElement.style.setProperty("--bylight-color", finalColor);
     
     // Replace the link with the span
     linkElement.parentNode?.replaceChild(spanElement, linkElement);
