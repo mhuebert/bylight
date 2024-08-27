@@ -1,6 +1,6 @@
 {
   "name": "bylight",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Flexible Syntax Highlighting for Documentation",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -21,8 +21,7 @@
     "build": "tsup",
     "test": "vitest",
     "prepublishOnly": "npm run build",
-    "watch": "tsup --watch",
-    "release": "node scripts/release.js"
+    "watch": "tsup --watch"
   },
   "repository": {
     "type": "git",
