@@ -10,6 +10,12 @@ export default defineConfig((options) => ({
   outDir: 'dist',
   globalName: 'bylight',
   watch: options.watch, // Enable watch mode when the --watch flag is used
+  // Specify output file names
+  outExtension({ format }) {
+    return {
+      js: format === 'esm' ? '.mjs' : format === 'cjs' ? '.js' : '.global.js'
+    }
+  },
   // Customize the IIFE output
   esbuildOptions(options, context) {
     if (context.format === 'iife') {
