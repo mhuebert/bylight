@@ -403,7 +403,24 @@ function bylight(options: BylightOptions = {}): void {
   addHoverEffect(targetElement);
 }
 
-// Attach utility functions to the main bylight function
+function highlight(
+  target: string | HTMLPreElement | NodeListOf<HTMLPreElement>,
+  patterns: string | string[],
+  options: HighlightOptions = {},
+  colorScheme: string[] = DefaultColors
+): void {
+  const patternsArray = Array.isArray(patterns) ? patterns : [patterns];
+  const elements = typeof target === 'string'
+    ? document.querySelectorAll<HTMLPreElement>(target)
+    : target instanceof HTMLElement
+      ? [target]
+      : target;
+
+  elements.forEach(element => {
+    highlightPatterns(element, patternsArray, options, colorScheme);
+  });
+}
+
 bylight.highlightPatterns = highlightPatterns;
 bylight.processLinksAndHighlight = processLinksAndHighlight;
 bylight.addHoverEffect = addHoverEffect;
@@ -411,12 +428,10 @@ bylight.findMatches = findMatches;
 bylight.findRegexMatches = findRegexMatches;
 bylight.escapeRegExp = escapeRegExp;
 bylight.DefaultColors = DefaultColors;
+bylight.highlight = highlight;
 
-// Export the main function as default and as a named export
-export { bylight as default, bylight };
-
-// Keep named exports for ESM users
 export {
+  bylight as default,
   BylightOptions,
   HighlightOptions,
   highlightPatterns,
@@ -426,23 +441,5 @@ export {
   findRegexMatches,
   escapeRegExp,
   DefaultColors,
-};
-
-// Add this new function
-function highlight(selector: string, patterns: string | string[], options: HighlightOptions = {}, colorScheme: string[] = DefaultColors): void {
-  const preElements = document.querySelectorAll<HTMLPreElement>(selector);
-  const patternsArray = Array.isArray(patterns) ? patterns : [patterns];
-
-  preElements.forEach(preElement => {
-    highlightPatterns(preElement, patternsArray, options, colorScheme);
-  });
-}
-
-// Add the new function to the utility functions attached to bylight
-bylight.highlight = highlight;
-
-// Add the new function to the named exports
-export {
-  // ... existing exports ...
   highlight,
 };
