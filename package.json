@@ -1,6 +1,6 @@
 {
   "name": "bylight",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Flexible Syntax Highlighting for Documentation",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
