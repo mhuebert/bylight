@@ -151,6 +151,10 @@ function highlight(
   options: HighlightOptions = {},
   colorScheme: string[] = DefaultColors
 ): void {
+  if (!patterns || (Array.isArray(patterns) && patterns.length === 0)) {
+    return;
+  }
+
   const patternsArray = Array.isArray(patterns) ? patterns : [patterns];
   const elements = typeof target === 'string'
     ? document.querySelectorAll<HTMLPreElement>(target)
