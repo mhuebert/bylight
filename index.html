@@ -188,14 +188,14 @@ const COLORS = ['red', 'green', 'blue'];</pre>
     <pre>A B C D E 1 2 3 4 5</pre>
 
     <h2>Programmatic Highlighting</h2>
-    We can also highlight patterns programmatically using the <a href="bylight:?match=bylight.highlight">highlight function</a>, which takes a <a href="bylight:?match=%22%23example-1%22">selector</a> (or `pre` element) and <a href="bylight:?match=[...]">list of patterns</a>:
+    We can also highlight patterns programmatically using the <a href="bylight:?match=bylight.highlight">highlight function</a>, which takes a <a href="bylight:?match=%22%23example-1%22">selector</a> (or `pre` element) and <a href="bylight:?match=[...]">list of patterns</a>. Each pattern can either be a string, or an object containing <code>match</code> (required) and <code>color</code> (optional):
 
     <pre>
 bylight.highlight("#example-1", [
   "Dots,dashes",
   "swirls,lines",
   "Stripes,zebras",
-  "spots,cats"
+  {match: "spots,cats", color: "black"}
 ]);</pre>
 <pre id="example-1">
     Dots and dashes, swirls and lines,
@@ -208,7 +208,7 @@ bylight.highlight("#example-1", [
           "Dots,dashes",
           "swirls,lines",
           "Stripes,zebras",
-          "spots,cats"
+          {match: "spots,cats", color: "black"}
         ]);
 
         bylight()

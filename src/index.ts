@@ -140,25 +140,49 @@ function generateUniqueId(): string {
   return `match-${Math.random().toString(36).slice(2, 11)}`;
 }
 
-function highlightPatterns(
-  preElement: HTMLPreElement,
-  patterns: string[],
+interface PatternObject {
+  match: string;
+  color?: string;
+}
+
+function highlight(
+  target: string | HTMLPreElement | NodeListOf<HTMLPreElement>,
+  patterns: string | (string | PatternObject)[] | PatternObject,
   options: HighlightOptions = {},
   colorScheme: string[] = DefaultColors
 ): void {
-  const text = preElement.textContent || "";
+  const patternsArray = Array.isArray(patterns) ? patterns : [patterns];
+  const elements = typeof target === 'string'
+    ? document.querySelectorAll<HTMLPreElement>(target)
+    : target instanceof HTMLElement
+      ? [target]
+      : target;
+
   const { matchId = generateUniqueId() } = options;
-  
-  const allMatches = patterns.flatMap((patternGroup, index) => {
-    const subPatterns = patternGroup.split(',').map(p => p.trim());
-    const color = colorScheme[index % colorScheme.length];
-    return findMatchesForPatterns(text, subPatterns, `${matchId}-${index}`)
-      .map(match => [...match, `--bylight-color: ${color};`] as [number, number, string, string]);
+
+  const processedPatterns = patternsArray.map((pattern, index) => {
+    if (typeof pattern === 'string') {
+      return { match: pattern, color: colorScheme[index % colorScheme.length] };
+    }
+    return {
+      match: pattern.match,
+      color: pattern.color || colorScheme[index % colorScheme.length]
+    };
   });
 
-  if (allMatches.length > 0) {
-    preElement.innerHTML = `<code>${applyHighlights(text, allMatches)}</code>`;
-  }
+  elements.forEach(element => {
+    const text = element.textContent || "";
+
+    const allMatches = processedPatterns.flatMap((pattern, index) => {
+      const subPatterns = pattern.match.split(',').map(p => p.trim()).filter(p => p !== '');
+      return findMatchesForPatterns(text, subPatterns, `${matchId}-${index}`)
+        .map(match => [...match, `--bylight-color: ${pattern.color};`] as [number, number, string, string]);
+    });
+
+    if (allMatches.length > 0) {
+      element.innerHTML = `<code>${applyHighlights(text, allMatches)}</code>`;
+    }
+  });
 }
 
 function applyHighlights(
@@ -403,43 +427,24 @@ function bylight(options: BylightOptions = {}): void {
   addHoverEffect(targetElement);
 }
 
-function highlight(
-  target: string | HTMLPreElement | NodeListOf<HTMLPreElement>,
-  patterns: string | string[],
-  options: HighlightOptions = {},
-  colorScheme: string[] = DefaultColors
-): void {
-  const patternsArray = Array.isArray(patterns) ? patterns : [patterns];
-  const elements = typeof target === 'string'
-    ? document.querySelectorAll<HTMLPreElement>(target)
-    : target instanceof HTMLElement
-      ? [target]
-      : target;
-
-  elements.forEach(element => {
-    highlightPatterns(element, patternsArray, options, colorScheme);
-  });
-}
-
-bylight.highlightPatterns = highlightPatterns;
+bylight.highlight = highlight;
 bylight.processLinksAndHighlight = processLinksAndHighlight;
 bylight.addHoverEffect = addHoverEffect;
 bylight.findMatches = findMatches;
 bylight.findRegexMatches = findRegexMatches;
 bylight.escapeRegExp = escapeRegExp;
 bylight.DefaultColors = DefaultColors;
-bylight.highlight = highlight;
 
 export {
   bylight as default,
   BylightOptions,
   HighlightOptions,
-  highlightPatterns,
+  PatternObject,
+  highlight,
   processLinksAndHighlight,
   addHoverEffect,
   findMatches,
   findRegexMatches,
   escapeRegExp,
   DefaultColors,
-  highlight,
 };

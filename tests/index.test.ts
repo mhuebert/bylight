@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import bylight, { findMatches, highlightPatterns, processLinksAndHighlight, addHoverEffect, findRegexMatches, DefaultColors, BylightOptions } from '../src/index'
+import bylight, { findMatches, processLinksAndHighlight, addHoverEffect, findRegexMatches, DefaultColors, BylightOptions, PatternObject } from '../src/index'
 
 describe('findMatches', () => {
   const testCases = [
@@ -142,19 +142,49 @@ describe('findMatches', () => {
   });
 });
 
-describe('highlightPatterns', () => {
+describe('highlight', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<pre>func(a, b) other(x, y)</pre>';
+    document.body.innerHTML = '<pre id="test-pre">func(a, b) other(x, y)</pre>';
   });
 
   it('should highlight patterns in a pre element', () => {
-    const preElement = document.querySelector('pre') as HTMLPreElement;
+    const preElement = document.getElementById('test-pre') as HTMLPreElement;
     
-    highlightPatterns(preElement, ['func(...)']);
+    bylight.highlight(preElement, ['func(...)']);
     
     expect(preElement.innerHTML).toContain('<span class="bylight-code"');
     expect(preElement.innerHTML).toContain('func(a, b)');
     expect(preElement.innerHTML).not.toContain('<span>other(x, y)</span>');
+  });
+
+  it('should accept pattern objects', () => {
+    const preElement = document.getElementById('test-pre') as HTMLPreElement;
+    const patterns: PatternObject[] = [
+      { match: 'func(...)', color: '#ff0000' },
+      { match: 'other(...)', color: '#00ff00' }
+    ];
+    
+    bylight.highlight(preElement, patterns);
+    
+    const highlightedSpans = preElement.querySelectorAll('span.bylight-code');
+    expect(highlightedSpans.length).toBe(2);
+    expect(highlightedSpans[0].style.getPropertyValue('--bylight-color')).toBe('#ff0000');
+    expect(highlightedSpans[1].style.getPropertyValue('--bylight-color')).toBe('#00ff00');
+  });
+
+  it('should work with a mix of strings and pattern objects', () => {
+    const preElement = document.getElementById('test-pre') as HTMLPreElement;
+    const patterns: (string | PatternObject)[] = [
+      'func(...)',
+      { match: 'other(...)', color: '#00ff00' }
+    ];
+    
+    bylight.highlight(preElement, patterns);
+    
+    const highlightedSpans = preElement.querySelectorAll('span.bylight-code');
+    expect(highlightedSpans.length).toBe(2);
+    expect(highlightedSpans[0].style.getPropertyValue('--bylight-color')).not.toBe('#00ff00');
+    expect(highlightedSpans[1].style.getPropertyValue('--bylight-color')).toBe('#00ff00');
   });
 });
 
